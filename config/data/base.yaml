@@ -67,4 +67,8 @@ Example_video:
 Example_audio:
   tsv: ./training/example_output/memmap/audio-example.tsv
   memmap_dir: ./training/example_output/memmap/audio-example
-  
+
+# Custom fine-tuning dataset
+Custom_video:
+  tsv: ./custom_data/features.tsv
+  memmap_dir: ./custom_data/features

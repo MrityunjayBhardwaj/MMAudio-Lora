@@ -1,0 +1,109 @@
+defaults:
+  - base_config
+  - override hydra/job_logging: custom-simplest
+  - _self_
+
+# Override experiment settings
+exp_id: lora_finetune
+debug: False
+
+# Model selection - can use larger models with LoRA
+model: small_16k
+
+# Enable custom fine-tuning dataset
+custom_finetune: True
+mini_train: False
+example_train: False
+
+# LoRA specific configuration
+lora:
+  rank: 64                    # LoRA rank (higher = more capacity, more parameters)
+  alpha: 128.0                # LoRA scaling factor (typically 2x rank)
+  dropout: 0.1                # LoRA dropout for regularization
+  target_modules:             # Modules to apply LoRA (empty = use defaults)
+    - "joint_blocks.*.latent_block.attn.qkv"
+    - "joint_blocks.*.latent_block.ffn.linear1"
+    - "joint_blocks.*.latent_block.ffn.linear2"
+    - "joint_blocks.*.clip_block.attn.qkv"
+    - "joint_blocks.*.clip_block.ffn.linear1"
+    - "joint_blocks.*.clip_block.ffn.linear2"
+    - "joint_blocks.*.text_block.attn.qkv"
+    - "joint_blocks.*.text_block.ffn.linear1"
+    - "joint_blocks.*.text_block.ffn.linear2"
+    - "fused_blocks.*.attn.qkv"
+    - "fused_blocks.*.ffn.linear1"
+    - "fused_blocks.*.ffn.linear2"
+
+# Training settings optimized for LoRA
+batch_size: 8               # Can use larger batch with LoRA
+gradient_accumulation_steps: 4  # Effective batch size = 32
+num_workers: 12             # Moderate workers
+pin_memory: True
+
+# Learning rate for LoRA (can be higher than full fine-tuning)
+learning_rate: 5e-4         # 10x higher than full fine-tuning
+warmup_steps: 200
+max_steps: 3000             # Faster convergence with LoRA
+weight_decay: 0.01
+
+# Memory optimizations
+amp: True                   # Mixed precision
+compile: False              # Disable for stability
+gradient_checkpointing: True
+
+# Regularization (less needed with LoRA)
+dropout_rate: 0.1           # Lower dropout
+label_smoothing: 0.0        # Disable label smoothing
+
+# Data augmentation (lighter for LoRA)
+augmentation:
+  enabled: True
+  time_masking: True
+  freq_masking: False       # Disable for faster training
+  mixup_alpha: 0.1          # Lighter mixup
+  noise_injection: 0.005    # Lighter noise
+
+# Evaluation and checkpointing
+eval_every: 300             # More frequent evaluation
+save_every: 300
+early_stopping:
+  enabled: True
+  patience: 5               # More patience for LoRA
+  min_delta: 0.001
+
+# Loss configuration
+loss_weights:
+  reconstruction: 1.0
+
+# Validation split
+validation:
+  enabled: True
+  split_ratio: 0.15         # Larger validation for small datasets
+  random_seed: 42
+
+# Logging
+logging:
+  log_every: 25             # More frequent logging
+  log_gradients: False      # Disable for speed
+  log_weights: False
+  tensorboard: True
+
+# Hardware optimization for A100
+hardware:
+  enable_tf32: True
+  enable_flash_attention: False  # May not be compatible
+  prefetch_factor: 2
+  persistent_workers: True
+
+# Inference settings
+inference:
+  merge_weights: True       # Merge LoRA for inference
+  save_merged: True         # Save merged model
+  compile_merged: False     # Don't compile merged model
+
+# Advanced LoRA settings
+lora_advanced:
+  use_rslora: False         # Use rank-stabilized LoRA
+  fan_in_fan_out: False     # For certain layer types
+  init_lora_weights: True   # Initialize LoRA weights properly
+  bias: "none"              # "none", "all", "lora_only"

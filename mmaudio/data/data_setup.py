@@ -47,10 +47,14 @@ def setup_training_datasets(cfg: DictConfig) -> tuple[Dataset, DistributedSample
         vgg = load_vgg_data(cfg, cfg.data.ExtractedVGG_val)
         audiocaps = load_audio_data(cfg, cfg.data.AudioCaps)
         dataset = MultiModalDataset([vgg], [audiocaps])
-    if cfg.example_train:
+    elif cfg.example_train:
         video = load_vgg_data(cfg, cfg.data.Example_video)
         audio = load_audio_data(cfg, cfg.data.Example_audio)
         dataset = MultiModalDataset([video], [audio])
+    elif cfg.custom_finetune:
+        # Custom fine-tuning dataset - video only for simplicity
+        custom_video = load_vgg_data(cfg, cfg.data.Custom_video)
+        dataset = custom_video  # Single modality for fine-tuning
     else:
         # load the largest one first
         freesound = load_audio_data(cfg, cfg.data.FreeSound)
